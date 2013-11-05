@@ -14,6 +14,10 @@ import qualified Tables.Test2 as T2
 
 do
   con <- runIO $ connDB
-  q <- strQuery [| Select [column T.id] |] [''T.Test, ''T2.Test2]
+  q <- strSelect $ 
+    Table ''T.Test 
+    `LJoin` ''T2.Test2 
+    `On` 'T.id `Equal` 'T2.id
+  --runIO $ print q
   runIO $ quickQuery con q [] >>= print
   return []

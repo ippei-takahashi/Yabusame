@@ -6,4 +6,3 @@ data Test2 = Test2
   { id :: Int
   , value :: String } deriving (Eq, Show)
 
-instance Table Test2

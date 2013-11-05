@@ -7,4 +7,3 @@ data Test = Test
   , name :: Maybe String 
   } deriving (Eq, Show)
 
-instance Table Test
