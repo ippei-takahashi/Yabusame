@@ -12,13 +12,13 @@ import Language.Haskell.TH.Syntax.Internals
 
 import Table
 
-strSelect :: Table -> Q String
-strSelect tbl = do
-  v <- validate tbl
+strSelect :: From -> Q String
+strSelect frm = do
+  v <- validate frm
   return $ if v 
     then
       "SELECT * FROM " ++
-      show tbl
+      show frm
     else 
       undefined
 

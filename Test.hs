@@ -15,7 +15,7 @@ import qualified Tables.Test2 as T2
 do
   con <- runIO $ connDB
   q <- strSelect $ 
-    Table ''T.Test 
+    From ''T.Test 
     `LJoin` ''T2.Test2 
     `On` 'T.id `Equal` 'T2.id
   --runIO $ print q
