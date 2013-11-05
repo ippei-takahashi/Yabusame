@@ -61,11 +61,11 @@ validate' f n n1 n2 = do
   return $ v && elem n1 c1 && elem n2 c2
 
 getName :: From -> Name
-getName (From n)            = n
-getName (f `XJoin` _)        = getName f
-getName (f `LJoin` _ `On` _) = getName f
-getName (f `RJoin` _ `On` _) = getName f
-getName (f `IJoin` _ `On` _) = getName f
+getName (From n)             = n
+getName (_ `XJoin` n)        = n
+getName (_ `LJoin` n `On` _) = n
+getName (_ `RJoin` n `On` _) = n
+getName (_ `IJoin` n `On` _) = n
 
 getColumns :: Name -> Q [Name]
 getColumns name = do
