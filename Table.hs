@@ -4,6 +4,7 @@ module Table where
 
 import Control.Applicative
 import Data.Convertible
+import qualified Data.HashMap.Strict as M
 import Database.HDBC
 import Language.Haskell.TH
 
@@ -17,7 +18,13 @@ data From
   | From `LJoin` On
   | From `RJoin` On
   | From `IJoin` On
-  
+
+data Table = Table
+  { name :: Name
+  , columns :: [Name] }
+
+type TableMap = M.HashMap (Maybe String) Table
+
 instance Show From where
   show (From n)            = nameBase n
   show (f `XJoin` n)        = 
@@ -43,22 +50,43 @@ eqStr :: Name -> Name -> Condition -> String
 eqStr n1 n2 (cn1 `Equal` cn2) = 
   columnName n1 cn1 ++ " = " ++ columnName n2 cn2
 
-validate :: From -> Q Bool 
-validate (From _)     = return True
-validate (_ `XJoin` _) = return True
-validate (f `LJoin` n `On` n1 `Equal` n2) = 
-  validate' f n n1 n2
+validate :: From -> Q (Either TableMap String)
+validate (From n) = do
+  c <- getColumns n
+  return $ Left $ M.singleton (nameModule n) $ Table n c
+validate (f `XJoin` n) = 
+  validate_ f n id
+validate (f `LJoin` n `On` n1 `Equal` n2) =
+  validateCond n1 n2 $ validate_ f n id 
 validate (f `RJoin` n `On` n1 `Equal` n2) = 
-  validate' f n n1 n2
+  validateCond n1 n2 $ validate_ f n id 
 validate (f `IJoin` n `On` n1 `Equal` n2) = 
-  validate' f n n1 n2
+  validateCond n1 n2 $ validate_ f n id 
 
-validate' :: From -> Name -> Name -> Name -> Q Bool
-validate' f n n1 n2 = do
-  v <- validate f
-  c1 <- getColumns $ getName f
-  c2 <- getColumns n
-  return $ v && elem n1 c1 && elem n2 c2
+validate_ :: From
+          -> Name
+          -> (String -> String) 
+          -> Q (Either TableMap String)
+validate_ frm n f = do
+  v <- validate frm
+  c <- getColumns n
+  return $ emap (M.insert (nameModule n) (Table n c)) f v
+ where
+  emap f g = either (Left . f) (Right . g)
+
+validateCond :: Name
+             -> Name
+             -> Q (Either TableMap String)
+             -> Q (Either TableMap String)
+validateCond n1 n2 e = do
+  e1 <- e
+  return $ validateCond' n2 $ validateCond' n1 e1
+ where
+  validateCond' n (Left t) =  
+    case M.lookup (nameModule n) t of
+      Just _  -> Left t
+      Nothing -> Right (nameBase n ++ " is undefined column")
+  validateCond' n e = e
 
 getName :: From -> Name
 getName (From n)             = n

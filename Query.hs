@@ -15,11 +15,8 @@ import Table
 strSelect :: From -> Q String
 strSelect frm = do
   v <- validate frm
-  return $ if v 
-    then
-      "SELECT * FROM " ++
-      show frm
-    else 
-      undefined
+  return $ case v of
+    Left t -> "SELECT * FROM " ++ show frm
+    Right s -> s
 
   
